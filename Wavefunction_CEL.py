@@ -4,7 +4,7 @@
 """This file contains the Psi() function,
  which takes in N positions of particles 
  on the sphere and returns the many
- body wavefunction for the nu=1/2 state."""
+ body wavefunction for the nu=1/2 state. It has the option of having a vortex"""
 ###-------------------------------------------------------------------------###
 ###-------------------------- Import Modules -------------------------------###
 ###-------------------------------------------------------------------------###
@@ -21,9 +21,10 @@ def nCr(n, r):
     n, r = int(n), int(r)
     if n < 0 or r < 0:
         return 0
-    if r > n:
+    elif r > n:
         return 0  # By definition, nCr = 0 when r > n
-    return math.comb(n, r)
+    else:
+        return math.comb(n, r)
 
 def sec(x):
     return 1 / np.cos(x)
@@ -79,16 +80,29 @@ def Normalisation(q,n,m):
 ###----------------------------- Functions ---------------------------------###
 ###-------------------------------------------------------------------------###
 
-def Psi(positions,N):
+def Psi(positions,N, Vortex):
     #takes in positions, spits out wavefunction 
     #u,v coords of particles 
+    #Vortex is True or False
     u_v_coords= np.zeros((N,2), dtype = complex) #e.g. u_v_coords[i]=(u_(i+1),v_(i+1)) 
     for j in range(N):
         theta_j=positions[j][0]
         phi_j=positions[j][1]
         u_v_coords[j][0]=cos(theta_j/2)*exp(-1j * phi_j/2) 
         u_v_coords[j][1]=sin(theta_j/2)*exp(+1j * phi_j/2)
-    return Jastrow_factor(u_v_coords) * determinant_factor(u_v_coords)
+    return Jastrow_factor(u_v_coords) * determinant_factor(u_v_coords) * vortex_factor(u_v_coords, Vortex)
+
+def vortex_factor(u_v_coords, Vortex):
+    N = len(u_v_coords)
+    if Vortex==False:
+        return 1
+    else:
+        mod_z_values = np.zeros(N) 
+        for i in range(N):
+            mod_z_values[i]=np.abs(u_v_coords[i][1]/u_v_coords[i][0])
+        return np.prod(mod_z_values**2/(1+mod_z_values**2))**2
+        
+        
 
 def Jastrow_factor(u_v_coords):
     N = len(u_v_coords)
@@ -155,7 +169,7 @@ def tilde_Y(i,j,u_v_coords):
     #print('total = ' + str(total))
     return total
     
-def R(j,a,b, u_v_coords):
+def R(j,a,b, u_v_coords): #need to rewrite this bit to define the u,v outside the loop - cleaner
     N = len(u_v_coords)
     #6 different cases
     if a==0 and b==0:
